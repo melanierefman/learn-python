@@ -1,4 +1,6 @@
-from app.core.exceptions import NotFoundError
+from decimal import Decimal
+
+from app.core.exceptions import ConflictError, NotFoundError
 from app.models.bank_account import BankAccount
 from app.repos.bank_account_repo import BankAccountRepository
 
@@ -17,3 +19,63 @@ class BankAccountService:
         if not account:
             raise NotFoundError("Bank account not found")
         return account
+    
+    # Method untuk membuat rekening bank baru
+    def create_account(
+        self,
+        account_number: str,
+        account_name: str,
+        bank_name: str,
+        balance: Decimal,
+        user_id: int,
+    ) -> BankAccount:
+        existing_account = self.repo.get_by_account_number(account_number)
+
+        if existing_account:
+            raise ConflictError("Account number already exists")
+
+        return self.repo.create_account(
+            account_number=account_number,
+            account_name=account_name,
+            bank_name=bank_name,
+            balance=balance,
+            user_id=user_id,
+        )
+        
+    def update_account(
+        self,
+        account_id: int,
+        user_id: int,
+        account_name: str,
+        bank_name: str,
+        balance: Decimal,
+    ) -> BankAccount:
+        account = self.repo.get_by_id_for_user(
+            account_id,
+            user_id,
+        )
+
+        if not account:
+            raise NotFoundError("Bank account not found")
+
+        return self.repo.update_account(
+            account=account,
+            account_name=account_name,
+            bank_name=bank_name,
+            balance=balance,
+        )
+        
+    def delete_account(
+        self,
+        account_id: int,
+        user_id: int,
+    ) -> None:
+        account = self.repo.get_by_id_for_user(
+            account_id,
+            user_id,
+        )
+
+        if not account:
+            raise NotFoundError("Bank account not found")
+
+        self.repo.delete_account(account)

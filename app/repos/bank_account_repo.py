@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -10,6 +12,59 @@ class BankAccountRepository(BaseRepository[BankAccount]):
 
     def __init__(self, db: Session) -> None:
         self.db = db
+             
+    def get_by_account_number(
+        self, account_number: str
+    ) -> BankAccount | None:
+        stmt = select(BankAccount).where(
+            BankAccount.account_number == account_number
+        )
+        return self.db.scalar(stmt)
+    
+    # Method untuk menyimpan data BankAccount baru ke db
+    def create_account(
+        self,
+        account_number: str,
+        account_name: str,
+        bank_name: str,
+        balance: Decimal,
+        user_id: int,
+    ) -> BankAccount:
+        account = BankAccount(
+            account_number=account_number,
+            account_name=account_name,
+            bank_name=bank_name,
+            balance=balance,
+            user_id=user_id,
+        )
+
+        self.db.add(account)
+        self.db.commit()
+        self.db.refresh(account)
+
+        return account
+    
+    # Method untuk memperbarui rekening bank yang sudah ada ke db
+    def update_account(
+        self,
+        account: BankAccount,
+        account_name: str,
+        bank_name: str,
+        balance: Decimal,
+    ) -> BankAccount:
+        account.account_name = account_name
+        account.bank_name = bank_name
+        account.balance = balance
+
+        self.db.commit()
+        self.db.refresh(account)
+
+        return account
+    
+    # Method untuk menghapus rekening bank dari db
+    def delete_account(self, account: BankAccount) -> None:
+        self.db.delete(account)
+        self.db.commit()
 
     def list_by_user(
         self, user_id: int, *, skip: int = 0, limit: int = 100
